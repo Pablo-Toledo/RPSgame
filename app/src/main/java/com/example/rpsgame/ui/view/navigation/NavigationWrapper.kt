@@ -1,9 +1,15 @@
 package com.example.rpsgame.ui.view.navigation
 
+
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -13,12 +19,11 @@ import com.example.rpsgame.remote.GameChoice
 import com.example.rpsgame.remote.GameState
 import com.example.rpsgame.ui.GameViewModel
 import com.example.rpsgame.ui.view.PlayerTurnScreen
+import com.example.rpsgame.ui.view.opponentDisconnected.OpponentDisconnectedContent
 import com.example.rpsgame.ui.view.round_result.RoundResultContent
-import com.example.rpsgame.ui.view.round_result.Scores
 import com.example.rpsgame.ui.view.waiting_move.WaitingMoveContent
 import com.example.rpsgame.ui.view.waiting_player.WaitingScreen
 import com.example.rpsgame.ui.view.welcome.WelcomeScreen
-import kotlinx.coroutines.launch
 
 @Composable
 fun NavigationWrapper() {
@@ -27,20 +32,20 @@ fun NavigationWrapper() {
     val scope = rememberCoroutineScope()
     val viewModel: GameViewModel = viewModel()
 
-    val gameState by viewModel.gameState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(gameState) {
-        when (gameState) {
+    LaunchedEffect(uiState.gameState) {
+        when (uiState.gameState) {
             is GameState.WaitingForPlayers -> navController.navigate(Screen.WaitingPlayer)
             is GameState.PlayerTurn -> navController.navigate(Screen.PlayerTurn)
             is GameState.RoundOver -> navController.navigate(Screen.RoundResult)
             is GameState.GameOver -> navController.navigate(Screen.Welcome)
-            null -> {
-                val currentRoute = navController.currentDestination?.route
-                if (currentRoute != null && !currentRoute.contains("Welcome")) {
-                    navController.popBackStack(Screen.Welcome, inclusive = false)
-                }
-            }
+        }
+    }
+
+    LaunchedEffect(uiState.isConnected) {
+        if (!uiState.isConnected && uiState.gameState !is GameState.WaitingForPlayers) {
+            navController.navigate(Screen.OpponentDisconnected)
         }
     }
 
@@ -51,66 +56,51 @@ fun NavigationWrapper() {
         exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(500)) },
         popEnterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(500)) },
         popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(500)) }
-    ){
+    ) {
         composable<Screen.Welcome> {
             WelcomeScreen(
                 onStart = {
-                    viewModel.connectToGame(
-                        onError = { errorMessage ->
-                            scope.launch { snackbarHostState.showSnackbar(errorMessage) }
-                        }
-                    )
+                    viewModel.connectToGame()
                 }
             )
         }
 
         composable<Screen.WaitingPlayer> {
             WaitingScreen(
-                onCancel = { viewModel.disconnect() }
+                onCancel = { viewModel.resetGame() }
             )
         }
 
         composable<Screen.PlayerTurn> {
-            val myScore by viewModel.myScore.collectAsState()
-            val opponentScore by viewModel.opponentScore.collectAsState()
-            val selectedMove by viewModel.selectedMove.collectAsState()
-
             PlayerTurnScreen(
-                myScore = myScore,
-                opponentScore = opponentScore,
-                selectedMove = selectedMove,
+                myScore = uiState.scores.me,
+                opponentScore = uiState.scores.opponent,
+                selectedMove = uiState.selectedMove,
                 onSelectMove = { choice -> viewModel.selectMove(choice) },
                 onSubmit = {
                     viewModel.submitMove()
                     navController.navigate(Screen.WaitingMove)
                 },
-                onBackToMenu = { viewModel.disconnect() }
+                onBackToMenu = { viewModel.resetGame() }
             )
         }
 
         composable<Screen.WaitingMove> {
-            val myScore by viewModel.myScore.collectAsState()
-            val opponentScore by viewModel.opponentScore.collectAsState()
-
             WaitingMoveContent(
-                scores = Scores(myScore, opponentScore),
+                scores = uiState.scores,
                 snackbarHostState = snackbarHostState
             )
         }
 
         composable<Screen.RoundResult> {
-            val myScore by viewModel.myScore.collectAsState()
-            val opponentScore by viewModel.opponentScore.collectAsState()
-
-            val roundOverState = gameState as? GameState.RoundOver
+            val roundOverState = uiState.gameState as? GameState.RoundOver
 
             if (roundOverState != null) {
                 val result = roundOverState.result
+                val myMove = result.playerMoves.find { it.playerId == uiState.myPlayerId }?.choice ?: GameChoice.ROCK
+                val opponentMove = result.playerMoves.find { it.playerId != uiState.myPlayerId }?.choice ?: GameChoice.ROCK
 
-                val myMove = result.playerMoves.find { it.playerId == viewModel.myPlayerId }?.choice ?: GameChoice.ROCK
-                val opponentMove = result.playerMoves.find { it.playerId != viewModel.myPlayerId }?.choice ?: GameChoice.ROCK
-
-                val iWon = result.winnerPlayerId == viewModel.myPlayerId
+                val iWon = result.winnerPlayerId == uiState.myPlayerId
                 val isDraw = result.isDraw
 
                 val text = when {
@@ -125,13 +115,12 @@ fun NavigationWrapper() {
                 }
 
                 RoundResultContent(
-                    scores = Scores(myScore, opponentScore),
+                    scores = uiState.scores,
                     myChoice = myMove,
                     opponentChoice = opponentMove,
                     resultText = text,
                     resultColor = color,
                     onNextRound = {
-                        viewModel.selectMove(GameChoice.ROCK) // Borrar después
                         navController.navigate(Screen.PlayerTurn)
                     },
                     snackbarHostState = snackbarHostState
@@ -140,6 +129,14 @@ fun NavigationWrapper() {
         }
 
         composable<Screen.OpponentDisconnected> {
+            OpponentDisconnectedContent(
+                scores = uiState.scores,
+                onBackToMenu = {
+                    viewModel.resetGame()
+                    navController.navigate(Screen.Welcome)
+                },
+                snackbarHostState = snackbarHostState
+            )
         }
     }
 }

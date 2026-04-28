@@ -7,16 +7,12 @@ plugins {
 
 android {
     namespace = "com.example.rpsgame"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 33
 
     defaultConfig {
         applicationId = "com.example.rpsgame"
-        minSdk = 36
-        targetSdk = 36
+        minSdk = 28
+        targetSdk = 33
         versionCode = 1
         versionName = "1.0"
 

@@ -2,129 +2,119 @@ package com.example.rpsgame.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.rpsgame.remote.*
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.websocket.*
-import io.ktor.websocket.*
+import com.example.rpsgame.remote.GameChoice
+import com.example.rpsgame.remote.GameState
+import com.example.rpsgame.remote.PlayerMoveDto
+import com.example.rpsgame.remote.RoundResultDto
+import com.example.rpsgame.ui.view.round_result.Scores
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
+import io.ktor.websocket.close
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
+data class GameUiState(
+    val gameState: GameState = GameState.WaitingForPlayers,
+    val scores: Scores = Scores(0, 0),
+    val selectedMove: GameChoice? = null,
+    val myPlayerId: String = UUID.randomUUID().toString(),
+    val isConnected: Boolean = false
+)
+
 class GameViewModel : ViewModel() {
 
-    // Cliente WebSocket de Ktor
     private val client = HttpClient(CIO) {
         install(WebSockets)
     }
 
     private var session: DefaultClientWebSocketSession? = null
 
-    // Generamos un ID único para este jugador de forma local (o lo puede asignar el server)
-    val myPlayerId = UUID.randomUUID().toString()
+    private val _uiState = MutableStateFlow(GameUiState())
+    val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
-    // --- Estados de la Interfaz ---
-
-    // Estado principal del juego recibido del backend
-    private val _gameState = MutableStateFlow<GameState?>(null)
-    val gameState: StateFlow<GameState?> = _gameState.asStateFlow()
-
-    private val _myScore = MutableStateFlow(0)
-    val myScore: StateFlow<Int> = _myScore.asStateFlow()
-
-    private val _opponentScore = MutableStateFlow(0)
-    val opponentScore: StateFlow<Int> = _opponentScore.asStateFlow()
-
-    private val _selectedMove = MutableStateFlow<GameChoice?>(null)
-    val selectedMove: StateFlow<GameChoice?> = _selectedMove.asStateFlow()
-
-    // --- Lógica de Red (WebSockets) ---
-
-    fun connectToGame(onError: (String) -> Unit) {
+    fun connectToGame() {
         viewModelScope.launch {
             try {
-                // 10.0.2.2 es el localhost de tu PC visto desde el emulador de Android
                 client.webSocket(host = "10.0.2.2", port = 8080, path = "/ws") {
                     session = this
+                    _uiState.update { it.copy(isConnected = true) }
 
-                    // Escuchamos los mensajes entrantes del servidor de forma infinita
                     for (frame in incoming) {
                         if (frame is Frame.Text) {
-                            val jsonMessage = frame.readText()
-                            handleServerMessage(jsonMessage)
+                            handleServerMessage(frame.readText())
                         }
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
-                onError("Error de conexión con el servidor")
-                _gameState.value = null // Reseteamos si se cae
+                _uiState.update { it.copy(isConnected = false) }
             }
         }
     }
 
     private fun handleServerMessage(json: String) {
         try {
-            // Convertimos el JSON que manda el server al objeto GameState
-            // OJO: Para que esto funcione, GameState debe tener @Serializable
             val newState = Json.decodeFromString<GameState>(json)
-            _gameState.value = newState
 
-            // Si la ronda terminó, actualizamos los marcadores
-            if (newState is GameState.RoundOver) {
-                updateScores(newState.result)
+            _uiState.update { currentState ->
+                val updatedScores = if (newState is GameState.RoundOver) {
+                    calculateNewScores(newState.result, currentState.scores, currentState.myPlayerId)
+                } else {
+                    currentState.scores
+                }
+
+                currentState.copy(
+                    gameState = newState,
+                    scores = updatedScores
+                )
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    private fun updateScores(result: RoundResultDto) {
-        if (!result.isDraw && result.winnerPlayerId != null) {
-            if (result.winnerPlayerId == myPlayerId) {
-                _myScore.value += 1
-            } else {
-                _opponentScore.value += 1
-            }
+    private fun calculateNewScores(result: RoundResultDto, currentScores: Scores, myId: String): Scores {
+        if (result.isDraw || result.winnerPlayerId == null) return currentScores
+
+        return if (result.winnerPlayerId == myId) {
+            currentScores.copy(me = currentScores.me + 1)
+        } else {
+            currentScores.copy(opponent = currentScores.opponent + 1)
         }
     }
 
-    // --- Acciones del Usuario ---
-
     fun selectMove(choice: GameChoice) {
-        _selectedMove.value = choice
+        _uiState.update { it.copy(selectedMove = choice) }
     }
 
     fun submitMove() {
-        val choice = _selectedMove.value ?: return
+        val choice = _uiState.value.selectedMove ?: return
         viewModelScope.launch {
             try {
-                val moveDto = PlayerMoveDto(playerId = myPlayerId, choice = choice)
-                val jsonMove = Json.encodeToString(moveDto)
-
-                // Enviamos el DTO convertido a JSON por el socket
-                session?.send(Frame.Text(jsonMove))
-
-                // Limpiamos la selección
-                _selectedMove.value = null
+                val moveDto = PlayerMoveDto(playerId = _uiState.value.myPlayerId, choice = choice)
+                session?.send(Frame.Text(Json.encodeToString(moveDto)))
+                _uiState.update { it.copy(selectedMove = null) }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
 
-    fun disconnect() {
+    fun resetGame() {
         viewModelScope.launch {
             session?.close()
             session = null
-            _gameState.value = null
-            _myScore.value = 0
-            _opponentScore.value = 0
-            _selectedMove.value = null
+            _uiState.update { GameUiState() }
         }
     }
 
