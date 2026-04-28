@@ -14,6 +14,7 @@ import com.example.rpsgame.remote.GameState
 import com.example.rpsgame.ui.GameViewModel
 import com.example.rpsgame.ui.view.PlayerTurnScreen
 import com.example.rpsgame.ui.view.round_result.RoundResultContent
+import com.example.rpsgame.ui.view.round_result.Scores
 import com.example.rpsgame.ui.view.waiting_move.WaitingMoveContent
 import com.example.rpsgame.ui.view.waiting_player.WaitingScreen
 import com.example.rpsgame.ui.view.welcome.WelcomeScreen
@@ -124,15 +125,13 @@ fun NavigationWrapper() {
                 }
 
                 RoundResultContent(
-                    uiState = RoundResultUiState(
-                        scores = Scores(myScore, opponentScore),
-                        myChoice = myMove,
-                        opponentChoice = opponentMove,
-                        resultText = text,
-                        resultColor = color
-                    ),
+                    scores = Scores(myScore, opponentScore),
+                    myChoice = myMove,
+                    opponentChoice = opponentMove,
+                    resultText = text,
+                    resultColor = color,
                     onNextRound = {
-                        viewModel.selectMove(null)
+                        viewModel.selectMove(GameChoice.ROCK) // Borrar después
                         navController.navigate(Screen.PlayerTurn)
                     },
                     snackbarHostState = snackbarHostState

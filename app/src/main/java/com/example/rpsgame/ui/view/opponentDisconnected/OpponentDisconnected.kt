@@ -33,7 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.rpsgame.R
-import com.example.rpsgame.ui.view.waiting_move.Scores
+import com.example.rpsgame.ui.view.round_result.Scores
 
 @Composable
 fun OpponentDisconnectedScreen(
