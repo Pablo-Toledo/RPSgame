@@ -1,4 +1,4 @@
-package com.example.rpsgame.ui.view
+package com.example.rpsgame.ui.view.welcome
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
