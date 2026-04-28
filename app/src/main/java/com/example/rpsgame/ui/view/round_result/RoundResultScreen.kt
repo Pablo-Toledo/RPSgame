@@ -26,9 +26,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,51 +34,35 @@ import androidx.compose.ui.graphics.Brush.Companion.linearGradient
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.unit.sp
 import com.example.rpsgame.R
 import com.example.rpsgame.remote.GameChoice
-import com.example.rpsgame.remote.RoundResultDto
-import com.example.rpsgame.ui.view.waiting_move.ScoreBoardHeader
-import com.example.rpsgame.ui.view.waiting_move.Scores
 
-@Preview(showSystemUi = true)
-@Composable
-fun RoundResultPreview() {
-    MaterialTheme {
-        RoundResultContent(
-            uiState = RoundResultUiState(
-                scores = Scores(2, 1),
-                myChoice = GameChoice.PAPER,
-                opponentChoice = GameChoice.ROCK,
-                resultText = "¡Ganaste esta ronda!",
-                resultColor = Color(0xFF4169E1)
-            ),
-            onNextRound = {},
-            snackbarHostState = remember { SnackbarHostState() }
-        )
-    }
-}
+data class Scores(
+    val me: Int,
+    val opponent: Int
+)
 
 @Composable
 fun RoundResultScreen(
-    resultDto: RoundResultDto,
-    currentScores: Scores,
-    myPlayerId: String,
+    scores: Scores,
+    myChoice: GameChoice,
+    opponentChoice: GameChoice,
+    resultText: String,
+    resultColor: Color,
     onNextRound: () -> Unit,
-    snackbarHostState: SnackbarHostState,
-    viewModel: RoundResultViewModel = viewModel()
+    snackbarHostState: SnackbarHostState
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
-    LaunchedEffect(Unit) {
-        viewModel.initResult(resultDto, currentScores, myPlayerId)
-    }
-
     RoundResultContent(
-        uiState = uiState,
+        scores = scores,
+        myChoice = myChoice,
+        opponentChoice = opponentChoice,
+        resultText = resultText,
+        resultColor = resultColor,
         onNextRound = onNextRound,
         snackbarHostState = snackbarHostState
     )
@@ -89,7 +70,11 @@ fun RoundResultScreen(
 
 @Composable
 fun RoundResultContent(
-    uiState: RoundResultUiState,
+    scores: Scores,
+    myChoice: GameChoice,
+    opponentChoice: GameChoice,
+    resultText: String,
+    resultColor: Color,
     onNextRound: () -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
@@ -113,7 +98,7 @@ fun RoundResultContent(
                 .padding(top = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ScoreBoardHeader(uiState.scores)
+            ScoreBoardHeader(scores)
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -121,11 +106,12 @@ fun RoundResultContent(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = uiState.resultText,
+                    text = resultText,
                     style = MaterialTheme.typography.headlineMedium,
-                    color = uiState.resultColor,
+                    color = resultColor,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    fontWeight = FontWeight.Bold
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -136,7 +122,7 @@ fun RoundResultContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     ResultMoveCard(
-                        choice = uiState.myChoice,
+                        choice = myChoice,
                         label = "Tú",
                         isPlayer1 = true
                     )
@@ -149,7 +135,7 @@ fun RoundResultContent(
                     )
 
                     ResultMoveCard(
-                        choice = uiState.opponentChoice,
+                        choice = opponentChoice,
                         label = "Rival",
                         isPlayer1 = false
                     )
@@ -211,10 +197,83 @@ fun ResultMoveCard(
         ) {
             Image(
                 painter = painterResource(id = icon),
-                contentDescription = "selection"
+                contentDescription = "selection",
+                modifier = Modifier.size(80.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = label, color = textColor, style = MaterialTheme.typography.labelMedium)
         }
+    }
+}
+
+@Composable
+fun ScoreBoardHeader(scores: Scores) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFE8EFFF))
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Yo: ${scores.me}",
+                    color = Color(0xFF4169E1),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .width(1.dp)
+                    .height(32.dp)
+                    .background(Color.LightGray)
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFFFF0F2))
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Rival: ${scores.opponent}",
+                    color = Color(0xFFDC143C),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
+    }
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun RoundResultPreview() {
+    MaterialTheme {
+        RoundResultContent(
+            scores = Scores(2, 1),
+            myChoice = GameChoice.PAPER,
+            opponentChoice = GameChoice.ROCK,
+            resultText = "¡Ganaste esta ronda!",
+            resultColor = Color(0xFF4169E1),
+            onNextRound = {},
+            snackbarHostState = remember { SnackbarHostState() }
+        )
     }
 }

@@ -20,4 +20,8 @@
         <string name="move_scissors">Tijeras</string>
         <string name="exit_button">Salir</string>
         <string name="submit_button">Enviar selección</string>
+
+        <string name="label_you_win">¡Ganaste!</string>
+        <string name="label_opponent_disconnected">Tu rival se ha desconectado</string>
+        <string name="label_go_to_menu">Volver al Menú</string>
 </resources>
