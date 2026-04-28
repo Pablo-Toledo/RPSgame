@@ -1,4 +1,4 @@
-package com.example.rpsgame.ui.view.waiting
+package com.example.rpsgame.ui.view.waiting_move
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

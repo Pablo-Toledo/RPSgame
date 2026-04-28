@@ -6,4 +6,8 @@
         <string name="start_game_button">Iniciar Juego</string>
         <string name="waiting_title">Buscando oponente...</string>
         <string name="cancel_button">Cancelar</string>
+        
+        <string name="next_round">Siguiente ronda</string>
+        <string name="waiting_move">Esperando al rival...</string>
+        <string name="submitted_move">Tu jugada ya fue enviada</string>
 </resources>

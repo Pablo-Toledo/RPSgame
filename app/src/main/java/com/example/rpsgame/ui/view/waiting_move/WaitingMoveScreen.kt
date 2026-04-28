@@ -1,4 +1,4 @@
-package com.example.rpsgame.ui.view.waiting
+package com.example.rpsgame.ui.view.waiting_move
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -40,21 +40,23 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rpsgame.remote.GameResultDto
+import com.example.rpsgame.R
 
 @Preview(showBackground = true, device = Devices.PIXEL_4)
 @Composable
-fun WaitingScreenPreview() {
+fun WaitingMoveMoveScreenPreview() {
     val mockScores = Scores(me = 3, opponent = 2)
     val snackbarHostState = remember { SnackbarHostState() }
 
     MaterialTheme {
-        WaitingContent(
+        WaitingMoveContent(
             scores = mockScores,
             snackbarHostState = snackbarHostState
         )
@@ -62,7 +64,7 @@ fun WaitingScreenPreview() {
 }
 
 @Composable
-fun WaitingScreen(
+fun WaitingMoveScreen(
     gameResult: GameResultDto,
     myPlayerId: String,
     snackbarHostState: SnackbarHostState,
@@ -79,14 +81,14 @@ fun WaitingScreen(
         if (uiState.isReady) onResultReady()
     }
 
-    WaitingContent(
+    WaitingMoveContent(
         scores = uiState.scores,
         snackbarHostState = snackbarHostState
     )
 }
 
 @Composable
-fun WaitingContent(
+fun WaitingMoveContent(
     scores: Scores,
     snackbarHostState: SnackbarHostState
 ) {
@@ -116,14 +118,14 @@ fun WaitingContent(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Text(
-                    text = "Esperando al rival...",
+                    text = stringResource(id = R.string.waiting_move),
                     style = MaterialTheme.typography.headlineMedium,
-                    color = Color(0xFFDC143C), // Crimson
+                    color = Color(0xFFDC143C),
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    text = "Tu jugada ya fue enviada",
+                    text = stringResource(id = R.string.submitted_move),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                     modifier = Modifier.padding(top = 8.dp)
@@ -183,7 +185,7 @@ fun ScoreBoardHeader(scores: Scores) {
             ) {
                 Text(
                     text = "Rival: ${scores.opponent}",
-                    color = Color(0xFFDC143C), // var(--color-player2)
+                    color = Color(0xFFDC143C),
                     style = MaterialTheme.typography.labelLarge
                 )
             }

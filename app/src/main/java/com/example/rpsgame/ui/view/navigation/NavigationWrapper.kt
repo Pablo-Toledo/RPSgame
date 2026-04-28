@@ -48,7 +48,7 @@ fun NavigationWrapper() {
         composable<Screen.PlayerTurn> {
 
         }
-        composable<Screen.Waiting> {
+        composable<Screen.WaitingMove> {
 
         }
         composable<Screen.RoundResult> {
