@@ -53,7 +53,7 @@ fun WelcomeScreen(onStart: () -> Unit, modifier: Modifier = Modifier) {
         initialValue = 0f,
         targetValue = -25f,
         animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = FastOutSlowInEasing),
+            animation = tween(1000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "bounce1"
@@ -63,9 +63,9 @@ fun WelcomeScreen(onStart: () -> Unit, modifier: Modifier = Modifier) {
         initialValue = 0f,
         targetValue = -25f,
         animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = FastOutSlowInEasing),
+            animation = tween(1000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
-            initialStartOffset = StartOffset(200)
+            initialStartOffset = StartOffset(500)
         ),
         label = "bounce2"
     )
@@ -123,7 +123,7 @@ fun WelcomeScreen(onStart: () -> Unit, modifier: Modifier = Modifier) {
                 contentDescription = "Papel",
                 modifier = Modifier
                     .size(108.dp)
-                    .offset(y = bounce1.dp)
+                    .offset(y = bounce2.dp)
             )
         }
 
