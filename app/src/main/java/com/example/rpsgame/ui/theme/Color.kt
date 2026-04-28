@@ -16,3 +16,12 @@ val Blue50 = Color(0xFFEFF6FF)
 
 val Purple600 = Color(0xFF9333EA)
 val Pink600 = Color(0xFFDB2777)
+
+val Player1Color = Color(0xFF60A5FA)
+val Player1Bg = Color(0xFFEFF6FF)
+val Player2Color = Color(0xFFFBBF24)
+val Player2Bg = Color(0xFFFFFBEB)
+
+val DisabledBg = Color(0xFFD1D5DB)
+val DisabledText = Color(0xFF6B7280)
+val BorderGray = Color(0xFFE5E7EB)

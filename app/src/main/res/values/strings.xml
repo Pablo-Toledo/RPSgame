@@ -10,4 +10,14 @@
         <string name="next_round">Siguiente ronda</string>
         <string name="waiting_move">Esperando al rival...</string>
         <string name="submitted_move">Tu jugada ya fue enviada</string>
+
+        <string name="score_me">Yo: %1$d</string>
+        <string name="score_opponent">Rival: %1$d</string>
+        <string name="turn_title">Tu Turno</string>
+        <string name="turn_subtitle">Selecciona tu jugada</string>
+        <string name="move_rock">Piedra</string>
+        <string name="move_paper">Papel</string>
+        <string name="move_scissors">Tijeras</string>
+        <string name="exit_button">Salir</string>
+        <string name="submit_button">Enviar selección</string>
 </resources>
