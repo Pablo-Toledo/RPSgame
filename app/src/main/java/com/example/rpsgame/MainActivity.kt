@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.rpsgame.ui.theme.RPSgameTheme
 import com.example.rpsgame.ui.view.WelcomeScreen
+import com.example.rpsgame.ui.view.navigation.NavigationWrapper
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,10 +27,7 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             RPSgameTheme {
-                WelcomeScreen(
-                    onStart = { /* Navegar */ },
-                    modifier = Modifier.fillMaxSize()
-                )
+                NavigationWrapper()
             }
         }
     }

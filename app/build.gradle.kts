@@ -51,8 +51,12 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     testImplementation(libs.junit)
 
+    // ViewModels
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.1")
 
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
