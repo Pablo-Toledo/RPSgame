@@ -2,10 +2,7 @@ package com.example.rpsgame.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.rpsgame.remote.GameChoice
-import com.example.rpsgame.remote.GameState
-import com.example.rpsgame.remote.PlayerMoveDto
-import com.example.rpsgame.remote.RoundResultDto
+import com.example.rpsgame.remote.*
 import com.example.rpsgame.ui.view.round_result.Scores
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -25,11 +22,12 @@ import kotlinx.serialization.json.Json
 import java.util.UUID
 
 data class GameUiState(
-    val gameState: GameState = GameState.WaitingForPlayers,
+    val gameState: GameState? = null,
     val scores: Scores = Scores(0, 0),
     val selectedMove: GameChoice? = null,
     val myPlayerId: String = UUID.randomUUID().toString(),
-    val isConnected: Boolean = false
+    val isConnected: Boolean = false,
+    val finalResult: GameResultDto? = null
 )
 
 class GameViewModel : ViewModel() {
@@ -46,7 +44,7 @@ class GameViewModel : ViewModel() {
     fun connectToGame() {
         viewModelScope.launch {
             try {
-                client.webSocket(host = "10.0.2.2", port = 8080, path = "/ws") {
+                client.webSocket(host = "255.255.255.0", port = 8080, path = "/ws") {
                     session = this
                     _uiState.update { it.copy(isConnected = true) }
 
@@ -57,7 +55,8 @@ class GameViewModel : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isConnected = false) }
+                e.printStackTrace()
+                _uiState.update { it.copy(isConnected = false, gameState = null) }
             }
         }
     }
@@ -75,7 +74,8 @@ class GameViewModel : ViewModel() {
 
                 currentState.copy(
                     gameState = newState,
-                    scores = updatedScores
+                    scores = updatedScores,
+                    finalResult = if (newState is GameState.GameOver) newState.result else currentState.finalResult
                 )
             }
         } catch (e: Exception) {
@@ -114,7 +114,7 @@ class GameViewModel : ViewModel() {
         viewModelScope.launch {
             session?.close()
             session = null
-            _uiState.update { GameUiState() }
+            _uiState.update { GameUiState(myPlayerId = it.myPlayerId) }
         }
     }
 

@@ -1,6 +1,5 @@
 package com.example.rpsgame.ui.view.navigation
 
-
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.SnackbarHostState
@@ -16,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.rpsgame.remote.GameChoice
+import com.example.rpsgame.remote.GameEndReason
 import com.example.rpsgame.remote.GameState
 import com.example.rpsgame.ui.GameViewModel
 import com.example.rpsgame.ui.view.PlayerTurnScreen
@@ -35,11 +35,19 @@ fun NavigationWrapper() {
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState.gameState) {
-        when (uiState.gameState) {
+        when (val currentState = uiState.gameState) {
             is GameState.WaitingForPlayers -> navController.navigate(Screen.WaitingPlayer)
             is GameState.PlayerTurn -> navController.navigate(Screen.PlayerTurn)
             is GameState.RoundOver -> navController.navigate(Screen.RoundResult)
-            is GameState.GameOver -> navController.navigate(Screen.Welcome)
+            is GameState.GameOver -> {
+                if (currentState.result.reason == GameEndReason.OPPONENT_ABANDONED) {
+                    navController.navigate(Screen.OpponentDisconnected)
+                } else {
+                    navController.navigate(Screen.Welcome)
+                }
+            }
+
+            else -> {}
         }
     }
 

@@ -21,8 +21,16 @@ data class RoundResultDto(
 )
 
 @Serializable
+enum class GameEndReason {
+    MAX_ROUNDS_REACHED,
+    OPPONENT_ABANDONED
+}
+
+@Serializable
 data class GameResultDto(
-    val roundResults: List<RoundResultDto>
+    val roundResults: List<RoundResultDto>,
+    val totalWinnerPlayerId: String?,
+    val reason: GameEndReason
 )
 
 @Serializable
