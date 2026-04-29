@@ -1,5 +1,6 @@
 package com.example.rpsgame.remote
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -10,7 +11,7 @@ enum class GameChoice {
 @Serializable
 data class PlayerMoveDto(
     val playerId: String,
-    val choice: GameChoice
+    val choice: GameChoice? = null
 )
 
 @Serializable
@@ -32,15 +33,20 @@ data class GameResultDto(
     val totalWinnerPlayerId: String?,
     val reason: GameEndReason
 )
-
 @Serializable
 sealed class GameState {
-    @Serializable
+    @Serializable @SerialName("waiting_players")
     data object WaitingForPlayers : GameState()
-    @Serializable
+
+    @Serializable @SerialName("player_turn")
     data class PlayerTurn(val playerToMove: String) : GameState()
-    @Serializable
+
+    @Serializable @SerialName("waiting_opponent")
+    data object WaitingForOpponent : GameState()
+
+    @Serializable @SerialName("round_over")
     data class RoundOver(val result: RoundResultDto) : GameState()
-    @Serializable
+
+    @Serializable @SerialName("game_over")
     data class GameOver(val result: GameResultDto) : GameState()
 }

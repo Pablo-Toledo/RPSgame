@@ -1,5 +1,6 @@
 package com.example.rpsgame.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rpsgame.remote.*
@@ -44,9 +45,14 @@ class GameViewModel : ViewModel() {
     fun connectToGame() {
         viewModelScope.launch {
             try {
-                client.webSocket(host = "255.255.255.0", port = 8080, path = "/ws") {
+                client.webSocket(host = "10.0.2.2", port = 8080, path = "/ws") {
                     session = this
                     _uiState.update { it.copy(isConnected = true) }
+
+                    val joinMessage = PlayerMoveDto(
+                        playerId = uiState.value.myPlayerId,
+                    )
+                    send(Frame.Text(Json.encodeToString(joinMessage)))
 
                     for (frame in incoming) {
                         if (frame is Frame.Text) {
@@ -55,7 +61,6 @@ class GameViewModel : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
                 _uiState.update { it.copy(isConnected = false, gameState = null) }
             }
         }
