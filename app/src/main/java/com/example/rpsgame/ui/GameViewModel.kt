@@ -25,6 +25,7 @@ import java.util.UUID
 data class GameUiState(
     val gameState: GameState? = null,
     val scores: Scores = Scores(0, 0),
+    val currentRound: Int = 1,
     val selectedMove: GameChoice? = null,
     val myPlayerId: String = UUID.randomUUID().toString(),
     val isConnected: Boolean = false,
@@ -34,7 +35,9 @@ data class GameUiState(
 class GameViewModel : ViewModel() {
 
     private val client = HttpClient(CIO) {
-        install(WebSockets)
+        install(WebSockets){
+            pingInterval = 15_000
+        }
     }
 
     private var session: DefaultClientWebSocketSession? = null
@@ -45,7 +48,7 @@ class GameViewModel : ViewModel() {
     fun connectToGame() {
         viewModelScope.launch {
             try {
-                client.webSocket(host = "10.0.2.2", port = 8080, path = "/ws") {
+                client.webSocket(host = "192.168.0.103", port = 8080, path = "/ws") {
                     session = this
                     _uiState.update { it.copy(isConnected = true) }
 
@@ -61,7 +64,13 @@ class GameViewModel : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isConnected = false, gameState = null) }
+                _uiState.update {
+                    if (it.gameState is GameState.GameOver) {
+                        it.copy(isConnected = false)
+                    } else {
+                        it.copy(isConnected = false, gameState = null)
+                    }
+                }
             }
         }
     }
@@ -71,8 +80,11 @@ class GameViewModel : ViewModel() {
             val newState = Json.decodeFromString<GameState>(json)
 
             _uiState.update { currentState ->
-                val updatedScores = if (newState is GameState.RoundOver) {
-                    calculateNewScores(newState.result, currentState.scores, currentState.myPlayerId)
+
+                val isRoundOver = newState is GameState.RoundOver
+
+                val updatedScores = if (isRoundOver) {
+                    calculateNewScores((newState as GameState.RoundOver).result, currentState.scores, currentState.myPlayerId)
                 } else {
                     currentState.scores
                 }
@@ -80,6 +92,7 @@ class GameViewModel : ViewModel() {
                 currentState.copy(
                     gameState = newState,
                     scores = updatedScores,
+                    currentRound = if (isRoundOver) currentState.currentRound + 1 else currentState.currentRound,
                     finalResult = if (newState is GameState.GameOver) newState.result else currentState.finalResult
                 )
             }
@@ -119,7 +132,7 @@ class GameViewModel : ViewModel() {
         viewModelScope.launch {
             session?.close()
             session = null
-            _uiState.update { GameUiState(myPlayerId = it.myPlayerId) }
+            _uiState.update { GameUiState(myPlayerId = it.myPlayerId, currentRound = 1) }
         }
     }
 

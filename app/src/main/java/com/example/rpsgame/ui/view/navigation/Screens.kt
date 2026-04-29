@@ -9,5 +9,6 @@ sealed class Screen(){
     @Serializable object PlayerTurn : Screen()
     @Serializable object WaitingMove : Screen()
     @Serializable object RoundResult : Screen()
+    @Serializable object GameOver : Screen()
     @Serializable object OpponentDisconnected : Screen ()
 }

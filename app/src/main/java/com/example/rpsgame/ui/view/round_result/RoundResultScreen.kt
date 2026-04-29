@@ -54,6 +54,7 @@ fun RoundResultScreen(
     opponentChoice: GameChoice,
     resultText: String,
     resultColor: Color,
+    isFinalRound: Boolean,
     onNextRound: () -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
@@ -63,6 +64,7 @@ fun RoundResultScreen(
         opponentChoice = opponentChoice,
         resultText = resultText,
         resultColor = resultColor,
+        isFinalRound = isFinalRound,
         onNextRound = onNextRound,
         snackbarHostState = snackbarHostState
     )
@@ -75,6 +77,7 @@ fun RoundResultContent(
     opponentChoice: GameChoice,
     resultText: String,
     resultColor: Color,
+    isFinalRound: Boolean,
     onNextRound: () -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
@@ -152,8 +155,13 @@ fun RoundResultContent(
                 contentAlignment = Alignment.Center
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    val buttonText = if (isFinalRound) {
+                        stringResource(id = R.string.show_results)
+                    } else {
+                        stringResource(id = R.string.next_round)
+                    }
                     Text(
-                        text = stringResource(id = R.string.next_round),
+                        text = buttonText,
                         color = Color.White,
                         style = MaterialTheme.typography.labelLarge
                     )
@@ -272,6 +280,7 @@ fun RoundResultPreview() {
             opponentChoice = GameChoice.ROCK,
             resultText = "¡Ganaste esta ronda!",
             resultColor = Color(0xFF4169E1),
+            isFinalRound = false,
             onNextRound = {},
             snackbarHostState = remember { SnackbarHostState() }
         )

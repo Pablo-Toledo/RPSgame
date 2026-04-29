@@ -24,6 +24,9 @@ import com.example.rpsgame.ui.view.round_result.RoundResultScreen
 import com.example.rpsgame.ui.view.waiting_move.WaitingMoveScreen
 import com.example.rpsgame.ui.view.waiting_player.WaitingScreen
 import com.example.rpsgame.ui.view.welcome.WelcomeScreen
+import androidx.activity.compose.BackHandler
+import com.example.rpsgame.ui.view.game_over.GameOverScreen
+import kotlinx.coroutines.launch
 
 @Composable
 fun NavigationWrapper() {
@@ -46,6 +49,10 @@ fun NavigationWrapper() {
             if (currentRoute != targetRoute) {
                 navController.navigate(screen) {
                     launchSingleTop = true
+
+                    if (screen is Screen.GameOver || screen is Screen.Welcome) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             }
         }
@@ -59,7 +66,7 @@ fun NavigationWrapper() {
                 if (state.result.reason == GameEndReason.OPPONENT_ABANDONED) {
                     safeNavigate(Screen.OpponentDisconnected)
                 } else {
-                    safeNavigate(Screen.Welcome) /** Cambiar por una pantalla de Juego Terminado */
+                    safeNavigate(Screen.GameOver)
                 }
             }
             null -> {}
@@ -89,13 +96,16 @@ fun NavigationWrapper() {
         }
 
         composable<Screen.WaitingPlayer> {
+            BackHandler { viewModel.resetGame() }
             WaitingScreen(
                 onCancel = { viewModel.resetGame() }
             )
         }
 
         composable<Screen.PlayerTurn> {
+            BackHandler { viewModel.resetGame() }
             PlayerTurnScreen(
+                currentRound = uiState.currentRound,
                 myScore = uiState.scores.me,
                 opponentScore = uiState.scores.opponent,
                 selectedMove = uiState.selectedMove,
@@ -108,6 +118,7 @@ fun NavigationWrapper() {
         }
 
         composable<Screen.WaitingMove> {
+            BackHandler { viewModel.resetGame() }
             WaitingMoveScreen(
                 scores = uiState.scores,
                 snackbarHostState = snackbarHostState
@@ -115,6 +126,8 @@ fun NavigationWrapper() {
         }
 
         composable<Screen.RoundResult> {
+            BackHandler { viewModel.resetGame() }
+
             val roundOverState = uiState.gameState as? GameState.RoundOver
 
             if (roundOverState != null) {
@@ -136,21 +149,46 @@ fun NavigationWrapper() {
                     else -> Color(0xFFDC143C)
                 }
 
+                val isFinalRound = uiState.currentRound > 5
+
                 RoundResultScreen(
                     scores = uiState.scores,
                     myChoice = myMove,
                     opponentChoice = opponentMove,
                     resultText = text,
                     resultColor = color,
+                    isFinalRound = isFinalRound,
                     onNextRound = {
-                        navController.navigate(Screen.PlayerTurn)
+                        if (!isFinalRound) {
+                            navController.navigate(Screen.PlayerTurn)
+                        }
                     },
                     snackbarHostState = snackbarHostState
                 )
             }
         }
 
+        composable<Screen.GameOver> {
+            BackHandler {
+                viewModel.resetGame()
+            }
+
+            val gameOverState = uiState.gameState as? GameState.GameOver
+
+            if (gameOverState != null) {
+                val totalWinner = gameOverState.result.totalWinnerPlayerId
+
+                GameOverScreen(
+                    scores = uiState.scores,
+                    isVictory = totalWinner == uiState.myPlayerId,
+                    isDraw = totalWinner == null,
+                    onBackToMenu = { viewModel.resetGame() }
+                )
+            }
+        }
+
         composable<Screen.OpponentDisconnected> {
+            BackHandler { viewModel.resetGame() }
             OpponentDisconnectedScreen(
                 scores = uiState.scores,
                 onBackToMenu = {

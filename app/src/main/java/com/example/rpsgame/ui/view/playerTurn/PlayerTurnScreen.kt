@@ -26,6 +26,7 @@ import com.example.rpsgame.ui.theme.*
 
 @Composable
 fun PlayerTurnScreen(
+    currentRound: Int,
     myScore: Int,
     opponentScore: Int,
     selectedMove: GameChoice?,
@@ -61,6 +62,29 @@ fun PlayerTurnScreen(
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Purple50)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.round_indicator, currentRound),
+                        color = Purple600,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(32.dp)
+                        .background(BorderGray)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
